@@ -47,7 +47,10 @@ class BoardPainter extends CustomPainter {
 
     for (final Mark mark in marks) {
       if (mark.type == 'O') {
-        canvas.drawCircle(mark.position, markSize / 2, oPaint);
+        final rect = Rect.fromCircle(center: mark.position, radius: markSize / 2);
+        const double fullCircle = 3.1415926535 * 2;
+        final sweep = fullCircle * mark.progress; // วาดตาม progress
+        canvas.drawArc(rect, 0, sweep, false, oPaint);
       } else if (mark.type == 'X') {
         final double halfSize = markSize / 2;
         canvas.drawLine(
