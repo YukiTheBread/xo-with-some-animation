@@ -11,7 +11,7 @@ class OXBoard extends StatefulWidget {
 }
 
 class _OXBoardState extends State<OXBoard> {
-  List<Mark> _marks = <Mark>[];
+  final List<Mark> _marks = <Mark>[];
   String _selectedTool = 'O';
   bool _isGameOver = false;
   String? _winnerType;
