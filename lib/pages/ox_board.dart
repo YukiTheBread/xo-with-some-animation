@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/mark.dart';
 import '../painters/board_painter.dart';
@@ -16,9 +17,10 @@ class _OXBoardState extends State<OXBoard> {
   bool _isGameOver = false;
   String? _winnerType;
 
-  static const double _markSize = 100.0;
-  static const int _gridSize = 3;
+  static const double _markSize = 100.0;     // ขนาดของเครื่องหมาย
+  static const int _gridSize = 3;            // ขนาดของกระดาน
   static const String _emptyCell = '-';
+  static const int totalSteps = 10;          // จำนวน step ของ animation
 
   List<String> _getMovesList() {
     final int n = _gridSize;
@@ -34,7 +36,6 @@ class _OXBoardState extends State<OXBoard> {
     final int n = _gridSize;
     final List<String> moves = _getMovesList();
 
-    // Check rows
     for (int r = 0; r < n; r++) {
       String first = moves[r * n];
       if (first != _emptyCell &&
@@ -43,7 +44,6 @@ class _OXBoardState extends State<OXBoard> {
       }
     }
 
-    // Check columns
     for (int c = 0; c < n; c++) {
       String first = moves[c];
       if (first != _emptyCell &&
@@ -52,13 +52,11 @@ class _OXBoardState extends State<OXBoard> {
       }
     }
 
-    // Main diagonal
     if (moves[0] != _emptyCell &&
         List.generate(n, (i) => moves[i * (n + 1)]).every((v) => v == moves[0])) {
       return true;
     }
 
-    // Anti-diagonal
     if (moves[n - 1] != _emptyCell &&
         List.generate(n, (i) => moves[i * n + (n - 1 - i)])
             .every((v) => v == moves[n - 1])) {
@@ -120,32 +118,59 @@ class _OXBoardState extends State<OXBoard> {
 
     final int col = (localPosition.dx / cellWidth).floor();
     final int row = (localPosition.dy / cellHeight).floor();
+    if (_marks.any((m) => m.row == row && m.col == col)) return;
 
-    if (_marks.any((Mark mark) => mark.row == row && mark.col == col)) return;
-
-    final Offset cellCenterPosition = Offset(
-      col * cellWidth + (cellWidth / 2),
-      row * cellHeight + (cellHeight / 2),
+    final Offset center = Offset(
+      col * cellWidth + cellWidth / 2,
+      row * cellHeight + cellHeight / 2,
     );
 
+    final mark = Mark(position: center, type: _selectedTool, row: row, col: col);
     setState(() {
-      _marks.add(Mark(
-        position: cellCenterPosition,
-        type: _selectedTool,
-        row: row,
-        col: col,
-      ));
-
-      if (_checkWinner()) {
-        _isGameOver = true;
-        _winnerType = _selectedTool;
-        _showWinnerDialog();
-      } else if (_marks.length == _gridSize * _gridSize) {
-        _isGameOver = true;
-        _winnerType = null;
-        _showDrawDialog();
-      }
+      _marks.add(mark);
     });
+
+    if (mark.type == 'O') {
+      const duration = Duration(milliseconds: 100);
+      int step = 0;
+      Timer.periodic(duration, (timer) {
+        if (step >= totalSteps) {
+          timer.cancel();
+          _afterDrawCheck(); // เช็คว่ามีผู้ชนะหลังจบ animation หรือไม่
+          return;
+        }
+        setState(() {
+          mark.progress = (step + 1) / totalSteps;
+        });
+        step++;
+      });
+    } else {
+      const duration = Duration(milliseconds: 100);
+      int step = 0;
+      Timer.periodic(duration, (timer) {
+        if (step >= totalSteps) {
+          timer.cancel();
+          _afterDrawCheck();
+          return;
+        }
+    setState(() {
+      mark.progress = (step + 1) / totalSteps;
+      });
+      step++;
+      });
+    }
+  }
+
+  void _afterDrawCheck() {
+    if (_checkWinner()) {
+      _isGameOver = true;
+      _winnerType = _selectedTool;
+      _showWinnerDialog();
+    } else if (_marks.length == _gridSize * _gridSize) {
+      _isGameOver = true;
+      _winnerType = null;
+      _showDrawDialog();
+    }
   }
 
   void _selectTool(String tool) {

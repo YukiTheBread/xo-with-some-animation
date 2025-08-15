@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
 import '../models/mark.dart';
 
 /// วาดกระดาน NxN และเครื่องหมาย 'O' / 'X'
@@ -47,22 +48,39 @@ class BoardPainter extends CustomPainter {
 
     for (final Mark mark in marks) {
       if (mark.type == 'O') {
-        final rect = Rect.fromCircle(center: mark.position, radius: markSize / 2);
-        const double fullCircle = 3.1415926535 * 2;
-        final sweep = fullCircle * mark.progress; // วาดตาม progress
+        // วาดแบบ Arc ตาม progress
+        final rect =
+            Rect.fromCircle(center: mark.position, radius: markSize / 2);
+        const double fullCircle = pi * 2;
+        final double sweep = fullCircle * mark.progress;
         canvas.drawArc(rect, 0, sweep, false, oPaint);
       } else if (mark.type == 'X') {
         final double halfSize = markSize / 2;
-        canvas.drawLine(
-          mark.position + Offset(-halfSize, -halfSize),
-          mark.position + Offset(halfSize, halfSize),
-          xPaint,
-        );
-        canvas.drawLine(
-          mark.position + Offset(-halfSize, halfSize),
-          mark.position + Offset(halfSize, -halfSize),
-          xPaint,
-        );
+        final double xprogress = mark.progress;
+
+        // เส้นแรก ( \ )
+        if (xprogress > 0.0) {
+          double prog1 = (xprogress <= 0.5) ? (xprogress * 2) : 1.0;
+          canvas.drawLine(
+            mark.position + Offset(-halfSize, -halfSize),
+            mark.position +
+                Offset(-halfSize + (markSize * prog1),
+                    -halfSize + (markSize * prog1)),
+            xPaint,
+          );
+        }
+
+        // เส้นที่สอง ( / )
+        if (xprogress > 0.5) {
+          double prog2 = (xprogress - 0.5) * 2;
+          canvas.drawLine(
+            mark.position + Offset(-halfSize, halfSize),
+            mark.position +
+                Offset(-halfSize + (markSize * prog2),
+                    halfSize - (markSize * prog2)),
+            xPaint,
+          );
+        }
       }
     }
   }
